@@ -1,10 +1,12 @@
+from dotenv import load_dotenv
+load_dotenv()
 from collections import Counter
 import requests
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
-
+from collections import Counter
 
 SECTIONS_TO_INDEX = [
     "indications_and_usage",
@@ -72,24 +74,24 @@ def load_drug_chunks(drug_name:str) -> list[Document]:
     chunks = splitter.split_documents(documents)
     return chunks
 
+PERSIST_DIR = "chroma_db"
 DRUGS = ["ibuprofen", "naproxen"]
 
-all_chunks = []
-
-for drug in DRUGS:
-    try:
-        all_chunks.extend(load_drug_chunks(drug))
-    except Exception as e:
-        print(f"Skipping {drug} : {e}")
-
-print(Counter(c.metadata["drug"] for c in all_chunks))
-
 emb = GoogleGenerativeAIEmbeddings(model="gemini-embedding-001")
-vector_store = Chroma.from_documents(
-    documents=all_chunks,
-    embedding=emb,
+vector_store = Chroma(
     collection_name="drug_labels",
+    embedding_function=emb,
+    persist_directory=PERSIST_DIR,
 )
-ALLOWED_DRUGS = {chunk.metadata["drug"] for chunk in all_chunks}
 
+if not vector_store.get()["ids"]:          # empty store: build it once
+    all_chunks = []
+    for drug in DRUGS:
+        try:
+            all_chunks.extend(load_drug_chunks(drug))
+        except Exception as e:
+            print(f"Skipping {drug}: {e}")
+    vector_store.add_documents(all_chunks)
+    print("Built index:", Counter(c.metadata["drug"] for c in all_chunks))
 
+ALLOWED_DRUGS = {m["drug"] for m in vector_store.get(include=["metadatas"])["metadatas"]}
