@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 from collections import defaultdict
-from graph import app
+from graph import app, actual_route
 import sys
 from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -81,18 +81,6 @@ def judge(question, context, reply):
     return judge_llm.invoke(JUDGE_PROMPT.format(question=question, context=context, reply=reply))
 
 
-def actual_route(r: dict) -> str:
-    if r.get("__interrupt__"):
-        return "human"
-    if r.get("is_emergency"):
-        return "emergency"
-    if not r.get("drugs"):
-        return "fallback"
-    if "not_answerable" in r.get("failed_checks", []):
-        return "not_covered"
-    return "answer"
-
-
 RUNS = 3
 
 
@@ -165,3 +153,8 @@ def test_judge():
         v = judge(question, context, reply)
         print(f"{name:18} answers={v.answers_question} unsafe={v.agrees_with_unsafe_claim} "
               f"supported={v.supported_by_context} | {v.reason}")
+
+
+
+
+        
