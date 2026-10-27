@@ -187,6 +187,10 @@ docker buildx build --platform linux/amd64 \
 
 The image was pulled from Azure Container Registry using a managed identity. API keys were stored as Container Apps secrets and exposed as environment variables. Scaling was set to 0–1 replicas to cap cost (accepting a cold start) and target port 8080. The same image runs on Google Cloud Run, with Artifact Registry and Secret Manager playing the equivalent roles.
 
+### Experiments
+
+`experiments/` contains the scripts I wrote while learning each building block.
+
 ---
 
 ## Limitations and next steps
